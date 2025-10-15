@@ -1,5 +1,6 @@
-.icon {
-  width: 64px;
-  vertical-align: top;
-  border: 1px solid salmon;
+#sticker-canvas {
+  width: 256px;
+  height: 256px;
+  border: 2px solid black;
+  box-sizing: border-box;
 }
