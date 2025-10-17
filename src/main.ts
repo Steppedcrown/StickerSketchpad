@@ -16,6 +16,7 @@ type Point = { x: number; y: number };
 type Line = Point[];
 
 const lines: Line[] = [];
+const redoLines: Line[] = [];
 
 let currentLine: Line = [];
 
@@ -53,6 +54,7 @@ canvas.addEventListener("mousedown", (e) => {
 
   currentLine = [];
   lines.push(currentLine);
+  redoLines.splice(0, redoLines.length);
   currentLine.push({ x: cursor.x, y: cursor.y });
 
   notify("cursor-changed");
@@ -84,4 +86,32 @@ document.body.append(clearButton);
 clearButton.addEventListener("click", () => {
   lines.splice(0, lines.length);
   redraw();
+});
+
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "undo";
+document.body.append(undoButton);
+
+undoButton.addEventListener("click", () => {
+  if (lines.length > 0) {
+    const last = lines.pop();
+    if (last !== undefined) {
+      redoLines.push(last);
+      notify("drawing-changed");
+    }
+  }
+});
+
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "redo";
+document.body.append(redoButton);
+
+redoButton.addEventListener("click", () => {
+  if (redoLines.length > 0) {
+    const restored = redoLines.pop();
+    if (restored !== undefined) {
+      lines.push(restored);
+      notify("drawing-changed");
+    }
+  }
 });
