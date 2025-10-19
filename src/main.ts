@@ -15,7 +15,7 @@ const ctx = canvas.getContext("2d");
 type Point = { x: number; y: number };
 
 interface Command {
-  execute(): void;
+  display(ctx: CanvasRenderingContext2D): void;
 }
 
 class LineCommand implements Command {
@@ -24,13 +24,11 @@ class LineCommand implements Command {
   constructor(x: number, y: number) {
     this.points = [{ x, y }];
   }
-
-  grow(x: number, y: number) {
+  drag(x: number, y: number) {
     this.points.push({ x, y });
   }
 
-  execute(): void {
-    if (!ctx) return;
+  display(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.strokeStyle = "black";
     ctx.lineWidth = 4;
@@ -66,18 +64,11 @@ function notify(name: string) {
 function redraw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const cmd of commands) cmd.execute();
+  for (const cmd of commands) cmd.display(ctx);
 }
 
 bus.addEventListener("drawing-changed", redraw);
 bus.addEventListener("cursor-changed", redraw);
-
-/*function tick() {
-  redraw();
-  requestAnimationFrame(tick);
-}
-
-tick();*/
 
 canvas.addEventListener("mouseout", () => {
   notify("cursor-changed");
@@ -91,7 +82,7 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
   notify("cursor-changed");
 
   if (e.buttons === 1) {
-    currentLineCommand?.grow(e.offsetX, e.offsetY);
+    currentLineCommand?.drag(e.offsetX, e.offsetY);
     notify("drawing-changed");
   }
 });
