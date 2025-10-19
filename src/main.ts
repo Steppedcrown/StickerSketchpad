@@ -57,15 +57,23 @@ class LineCommand implements Command {
 class CursorCommand implements Command {
   x: number;
   y: number;
+  width: number;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, width = 2) {
     this.x = x;
     this.y = y;
+    this.width = width;
   }
 
   display(ctx: CanvasRenderingContext2D): void {
-    ctx.font = "32px monospace";
-    ctx.fillText("*", this.x - 8, this.y + 16);
+    // draw a filled circle matching the current tool thickness
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    const radius = Math.max(1, this.width / 2);
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -91,21 +99,21 @@ function redraw() {
 }
 
 bus.addEventListener("drawing-changed", redraw);
-bus.addEventListener("cursor-changed", redraw);
+bus.addEventListener("tool-moved", redraw);
 
 canvas.addEventListener("mouseenter", (e: MouseEvent) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
-  notify("cursor-changed");
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  notify("tool-moved");
 });
 
 canvas.addEventListener("mouseout", () => {
   cursorCommand = null;
-  notify("cursor-changed");
+  notify("tool-moved");
 });
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
-  notify("cursor-changed");
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  notify("tool-moved");
 
   if (e.buttons === 1) {
     currentLineCommand?.drag(e.offsetX, e.offsetY);
@@ -124,7 +132,7 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
 
 canvas.addEventListener("mouseup", (e: MouseEvent) => {
   currentLineCommand = null;
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
   notify("drawing-changed");
 });
 
