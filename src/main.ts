@@ -54,9 +54,25 @@ class LineCommand implements Command {
   }
 }
 
+class CursorCommand implements Command {
+  x: number;
+  y: number;
+
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display(ctx: CanvasRenderingContext2D): void {
+    ctx.font = "32px monospace";
+    ctx.fillText("*", this.x - 8, this.y + 16);
+  }
+}
+
 const commands: Command[] = [];
 const redoCommands: Command[] = [];
 let currentLineCommand: LineCommand | null = null;
+let cursorCommand: CursorCommand | null = null;
 
 const thinWidth = 2;
 const thickWidth = 8;
@@ -71,20 +87,24 @@ function redraw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (const cmd of commands) cmd.display(ctx);
+  if (cursorCommand) cursorCommand.display(ctx);
 }
 
 bus.addEventListener("drawing-changed", redraw);
 bus.addEventListener("cursor-changed", redraw);
 
-canvas.addEventListener("mouseout", () => {
+canvas.addEventListener("mouseenter", (e: MouseEvent) => {
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
   notify("cursor-changed");
 });
 
-canvas.addEventListener("mouseenter", () => {
+canvas.addEventListener("mouseout", () => {
+  cursorCommand = null;
   notify("cursor-changed");
 });
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
   notify("cursor-changed");
 
   if (e.buttons === 1) {
@@ -95,6 +115,7 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
   currentLineCommand = new LineCommand(e.offsetX, e.offsetY, currentThickness);
+  cursorCommand = null;
   commands.push(currentLineCommand);
   redoCommands.splice(0, redoCommands.length);
   notify("drawing-changed");
