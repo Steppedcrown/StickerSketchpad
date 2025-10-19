@@ -4,3 +4,25 @@
   border: 1px solid black;
   box-sizing: border-box;
 }
+
+.tools {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.tool-button {
+  padding: 6px 10px;
+  border: 1px solid #444;
+  background: #f0f0f0;
+  cursor: pointer;
+  margin-right: 4px;
+  border-radius: 4px;
+}
+
+.tool-button.selectedTool {
+  background: #222;
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) inset;
+}
