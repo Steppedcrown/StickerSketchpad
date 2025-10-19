@@ -109,6 +109,7 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
 
   if (e.buttons === 1) {
     currentLineCommand?.drag(e.offsetX, e.offsetY);
+    cursorCommand = null;
     notify("drawing-changed");
   }
 });
@@ -121,8 +122,9 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
   notify("drawing-changed");
 });
 
-canvas.addEventListener("mouseup", () => {
+canvas.addEventListener("mouseup", (e: MouseEvent) => {
   currentLineCommand = null;
+  cursorCommand = new CursorCommand(e.offsetX, e.offsetY);
   notify("drawing-changed");
 });
 
