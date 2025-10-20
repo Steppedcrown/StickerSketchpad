@@ -77,10 +77,70 @@ class CursorCommand implements Command {
   }
 }
 
+// Preview for a sticker while the user is positioning it
+class StickerPreviewCommand implements Command {
+  x: number;
+  y: number;
+  emoji: string;
+  size: number;
+
+  constructor(x: number, y: number, emoji: string, size = 32) {
+    this.x = x;
+    this.y = y;
+    this.emoji = emoji;
+    this.size = size;
+  }
+
+  display(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `${this.size}px serif`;
+    ctx.fillText(this.emoji, this.x, this.y);
+    ctx.restore();
+  }
+}
+
+// A placed sticker in the drawing. Dragging repositions the sticker.
+class StickerCommand implements Command {
+  x: number;
+  y: number;
+  emoji: string;
+  size: number;
+
+  constructor(x: number, y: number, emoji: string, size = 32) {
+    this.x = x;
+    this.y = y;
+    this.emoji = emoji;
+    this.size = size;
+  }
+
+  // reposition the sticker
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+
+  display(ctx: CanvasRenderingContext2D): void {
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `${this.size}px serif`;
+    ctx.fillText(this.emoji, this.x, this.y);
+    ctx.restore();
+  }
+}
+
 const commands: Command[] = [];
 const redoCommands: Command[] = [];
 let currentLineCommand: LineCommand | null = null;
-let cursorCommand: CursorCommand | null = null;
+// previewCommand is used for cursor preview or sticker preview
+let previewCommand: Command | null = null;
+
+// currently selected sticker emoji (null means drawing tool)
+let selectedSticker: string | null = null;
+const stickerSize: number = 32;
 
 const thinWidth = 2;
 const thickWidth = 8;
@@ -95,44 +155,109 @@ function redraw() {
   if (!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (const cmd of commands) cmd.display(ctx);
-  if (cursorCommand) cursorCommand.display(ctx);
+  if (previewCommand) previewCommand.display(ctx);
 }
 
 bus.addEventListener("drawing-changed", redraw);
 bus.addEventListener("tool-moved", redraw);
 
 canvas.addEventListener("mouseenter", (e: MouseEvent) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  if (selectedSticker) {
+    previewCommand = new StickerPreviewCommand(
+      e.offsetX,
+      e.offsetY,
+      selectedSticker,
+      stickerSize,
+    );
+  } else {
+    previewCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  }
   notify("tool-moved");
 });
 
 canvas.addEventListener("mouseout", () => {
-  cursorCommand = null;
+  previewCommand = null;
   notify("tool-moved");
 });
 
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  if (selectedSticker) {
+    // update sticker preview position
+    previewCommand = new StickerPreviewCommand(
+      e.offsetX,
+      e.offsetY,
+      selectedSticker,
+      stickerSize,
+    );
+  } else {
+    previewCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  }
   notify("tool-moved");
 
   if (e.buttons === 1) {
-    currentLineCommand?.drag(e.offsetX, e.offsetY);
-    cursorCommand = null;
-    notify("drawing-changed");
+    if (currentLineCommand) {
+      currentLineCommand.drag(e.offsetX, e.offsetY);
+      previewCommand = null;
+      notify("drawing-changed");
+    } else {
+      // dragging a placed sticker — check last clicked sticker under cursor
+      // find a StickerCommand near the mouse and drag it
+      for (let i = commands.length - 1; i >= 0; i--) {
+        const c = commands[i];
+        if (c instanceof StickerCommand) {
+          const dx = (c as StickerCommand).x - e.offsetX;
+          const dy = (c as StickerCommand).y - e.offsetY;
+          const dist = Math.hypot(dx, dy);
+          if (dist < (c as StickerCommand).size) {
+            (c as StickerCommand).drag(e.offsetX, e.offsetY);
+            notify("drawing-changed");
+            break;
+          }
+        }
+      }
+    }
   }
 });
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
-  currentLineCommand = new LineCommand(e.offsetX, e.offsetY, currentThickness);
-  cursorCommand = null;
-  commands.push(currentLineCommand);
-  redoCommands.splice(0, redoCommands.length);
-  notify("drawing-changed");
+  if (selectedSticker) {
+    // place a sticker command
+    const sticker = new StickerCommand(
+      e.offsetX,
+      e.offsetY,
+      selectedSticker,
+      stickerSize,
+    );
+    commands.push(sticker);
+    redoCommands.splice(0, redoCommands.length);
+    // after placing, clear preview but keep the sticker selected so user can place multiple
+    previewCommand = null;
+    notify("drawing-changed");
+  } else {
+    currentLineCommand = new LineCommand(
+      e.offsetX,
+      e.offsetY,
+      currentThickness,
+    );
+    previewCommand = null;
+    commands.push(currentLineCommand);
+    redoCommands.splice(0, redoCommands.length);
+    notify("drawing-changed");
+  }
 });
 
 canvas.addEventListener("mouseup", (e: MouseEvent) => {
   currentLineCommand = null;
-  cursorCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  if (selectedSticker) {
+    previewCommand = new StickerPreviewCommand(
+      e.offsetX,
+      e.offsetY,
+      selectedSticker,
+      stickerSize,
+    );
+  } else {
+    previewCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+  }
   notify("drawing-changed");
 });
 
@@ -152,6 +277,49 @@ thickButton.className = "tool-button";
 
 toolsContainer.append(thinButton, thickButton);
 document.body.append(toolsContainer);
+
+// Sticker tool buttons
+const stickersContainer = document.createElement("div");
+stickersContainer.className = "tools stickers";
+
+const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
+
+const drawingButton = document.createElement("button");
+drawingButton.textContent = "Draw";
+drawingButton.className = "tool-button selectedTool";
+stickersContainer.append(drawingButton);
+
+for (const emoji of stickerEmojis) {
+  const b = document.createElement("button");
+  b.textContent = emoji;
+  b.className = "tool-button";
+  b.addEventListener("click", () => {
+    // select this sticker
+    selectedSticker = emoji;
+    // update visual state
+    for (
+      const btn of Array.from(stickersContainer.querySelectorAll("button"))
+    ) {
+      btn.classList.remove("selectedTool");
+    }
+    b.classList.add("selectedTool");
+    // fire tool-moved so preview updates
+    notify("tool-moved");
+  });
+  stickersContainer.append(b);
+}
+
+// clicking Draw deselects stickers and returns to drawing tool
+drawingButton.addEventListener("click", () => {
+  selectedSticker = null;
+  for (const btn of Array.from(stickersContainer.querySelectorAll("button"))) {
+    btn.classList.remove("selectedTool");
+  }
+  drawingButton.classList.add("selectedTool");
+  notify("tool-moved");
+});
+
+document.body.append(stickersContainer);
 
 function selectTool(button: HTMLButtonElement, thickness: number) {
   // update visual state
