@@ -181,6 +181,22 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
 });
 
 canvas.addEventListener("mousedown", (e: MouseEvent) => {
+  if (!selectedSticker) {
+    currentLineCommand = new LineCommand(
+      e.offsetX,
+      e.offsetY,
+      currentThickness,
+    );
+    commands.push(currentLineCommand);
+    previewCommand = null;
+  }
+
+  redoCommands.splice(0, redoCommands.length);
+  notify("drawing-changed");
+});
+
+canvas.addEventListener("mouseup", (e: MouseEvent) => {
+  currentLineCommand = null;
   if (selectedSticker) {
     // place a sticker command
     const sticker = new StickerCommand(
@@ -190,22 +206,7 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
       stickerSize,
     );
     commands.push(sticker);
-  } else {
-    currentLineCommand = new LineCommand(
-      e.offsetX,
-      e.offsetY,
-      currentThickness,
-    );
-    commands.push(currentLineCommand);
-  }
-  previewCommand = null;
-  redoCommands.splice(0, redoCommands.length);
-  notify("drawing-changed");
-});
 
-canvas.addEventListener("mouseup", (e: MouseEvent) => {
-  currentLineCommand = null;
-  if (selectedSticker) {
     previewCommand = new StickerCommand(
       e.offsetX,
       e.offsetY,
