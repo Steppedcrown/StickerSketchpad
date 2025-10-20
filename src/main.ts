@@ -152,6 +152,7 @@ canvas.addEventListener("mouseenter", (e: MouseEvent) => {
 
 canvas.addEventListener("mouseout", () => {
   previewCommand = null;
+  currentLineCommand = null;
   notify("tool-moved");
 });
 
