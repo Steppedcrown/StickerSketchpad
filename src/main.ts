@@ -77,31 +77,6 @@ class CursorCommand implements Command {
   }
 }
 
-// Preview for a sticker while the user is positioning it
-class StickerPreviewCommand implements Command {
-  x: number;
-  y: number;
-  emoji: string;
-  size: number;
-
-  constructor(x: number, y: number, emoji: string, size = 32) {
-    this.x = x;
-    this.y = y;
-    this.emoji = emoji;
-    this.size = size;
-  }
-
-  display(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
-    ctx.globalAlpha = 0.8;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = `${this.size}px serif`;
-    ctx.fillText(this.emoji, this.x, this.y);
-    ctx.restore();
-  }
-}
-
 // A placed sticker in the drawing. Dragging repositions the sticker.
 class StickerCommand implements Command {
   x: number;
@@ -136,7 +111,7 @@ const commands: Command[] = [];
 const redoCommands: Command[] = [];
 let currentLineCommand: LineCommand | null = null;
 // previewCommand is used for cursor preview or sticker preview
-let previewCommand: Command | null = null;
+let previewCommand: CursorCommand | StickerCommand | null = null;
 
 // currently selected sticker emoji (null means drawing tool)
 let selectedSticker: string | null = null;
@@ -163,7 +138,7 @@ bus.addEventListener("tool-moved", redraw);
 
 canvas.addEventListener("mouseenter", (e: MouseEvent) => {
   if (selectedSticker) {
-    previewCommand = new StickerPreviewCommand(
+    previewCommand = new StickerCommand(
       e.offsetX,
       e.offsetY,
       selectedSticker,
@@ -183,7 +158,7 @@ canvas.addEventListener("mouseout", () => {
 canvas.addEventListener("mousemove", (e: MouseEvent) => {
   if (selectedSticker) {
     // update sticker preview position
-    previewCommand = new StickerPreviewCommand(
+    previewCommand = new StickerCommand(
       e.offsetX,
       e.offsetY,
       selectedSticker,
@@ -198,24 +173,10 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
     if (currentLineCommand) {
       currentLineCommand.drag(e.offsetX, e.offsetY);
       previewCommand = null;
-      notify("drawing-changed");
-    } else {
-      // dragging a placed sticker — check last clicked sticker under cursor
-      // find a StickerCommand near the mouse and drag it
-      for (let i = commands.length - 1; i >= 0; i--) {
-        const c = commands[i];
-        if (c instanceof StickerCommand) {
-          const dx = (c as StickerCommand).x - e.offsetX;
-          const dy = (c as StickerCommand).y - e.offsetY;
-          const dist = Math.hypot(dx, dy);
-          if (dist < (c as StickerCommand).size) {
-            (c as StickerCommand).drag(e.offsetX, e.offsetY);
-            notify("drawing-changed");
-            break;
-          }
-        }
-      }
+    } else if (selectedSticker) {
+      (previewCommand as StickerCommand).drag(e.offsetX, e.offsetY);
     }
+    notify("drawing-changed");
   }
 });
 
@@ -245,7 +206,7 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
 canvas.addEventListener("mouseup", (e: MouseEvent) => {
   currentLineCommand = null;
   if (selectedSticker) {
-    previewCommand = new StickerPreviewCommand(
+    previewCommand = new StickerCommand(
       e.offsetX,
       e.offsetY,
       selectedSticker,
