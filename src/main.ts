@@ -229,21 +229,17 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
       stickerSize,
     );
     commands.push(sticker);
-    redoCommands.splice(0, redoCommands.length);
-    // after placing, clear preview but keep the sticker selected so user can place multiple
-    previewCommand = null;
-    notify("drawing-changed");
   } else {
     currentLineCommand = new LineCommand(
       e.offsetX,
       e.offsetY,
       currentThickness,
     );
-    previewCommand = null;
     commands.push(currentLineCommand);
-    redoCommands.splice(0, redoCommands.length);
-    notify("drawing-changed");
   }
+  previewCommand = null;
+  redoCommands.splice(0, redoCommands.length);
+  notify("drawing-changed");
 });
 
 canvas.addEventListener("mouseup", (e: MouseEvent) => {
