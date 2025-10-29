@@ -332,7 +332,7 @@ function addStickerButton(emoji: string) {
   return b;
 }
 
-const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
+const stickerEmojis = ["😭", "🥀", "🗿"]; // three favorite emojis
 let first = true;
 for (const emoji of stickerEmojis) {
   const sticker = addStickerButton(emoji);
