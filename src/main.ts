@@ -242,6 +242,8 @@ const stickersContainer = document.createElement("div");
 stickersContainer.className = "tools stickers";
 stickersContainer.classList.add("collapsed");
 
+const toolContainers = [drawingContainer, stickersContainer];
+
 // Mode selection buttons
 const drawingButton = document.createElement("button");
 drawingButton.textContent = "Draw";
@@ -256,7 +258,6 @@ modeContainer.append(stickerButton);
 function selectMode(
   selectedButton: HTMLButtonElement,
   containerToShow: HTMLDivElement,
-  containerToHide: HTMLDivElement,
 ) {
   // Inside selectMode function
   for (const btn of Array.from(modeContainer.querySelectorAll("button"))) {
@@ -264,18 +265,20 @@ function selectMode(
   }
   selectedButton.classList.add("selectedTool");
 
+  for (const container of toolContainers) {
+    container.classList.add("collapsed");
+  }
   containerToShow.classList.remove("collapsed");
-  containerToHide.classList.add("collapsed");
 
   notify("tool-moved");
 }
 
 drawingButton.addEventListener("click", () => {
-  selectMode(drawingButton, drawingContainer, stickersContainer);
+  selectMode(drawingButton, drawingContainer);
 });
 
 stickerButton.addEventListener("click", () => {
-  selectMode(stickerButton, stickersContainer, drawingContainer);
+  selectMode(stickerButton, stickersContainer);
 });
 
 document.body.append(modeContainer);
