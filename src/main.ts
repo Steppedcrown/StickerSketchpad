@@ -280,6 +280,21 @@ function addStickerButton(emoji: string) {
 for (const emoji of stickerEmojis) {
   addStickerButton(emoji);
 }
+
+const addSticker = document.createElement("button");
+addSticker.textContent = "+";
+addSticker.className = "tool-button";
+addSticker.addEventListener("click", () => {
+  const newEmojis = prompt("Enter one or more emojis to add to the palette");
+  if (newEmojis) {
+    // Using Array.from() or the spread operator `...` correctly handles
+    // multi-codepoint emoji characters.
+    for (const emoji of [...newEmojis]) {
+      addStickerButton(emoji);
+    }
+  }
+});
+stickersContainer.append(addSticker);
 //#endregion
 
 // #region Button Event Listeners and Logic
