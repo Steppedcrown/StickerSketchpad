@@ -251,9 +251,7 @@ const stickersContainer = document.createElement("div");
 stickersContainer.className = "tools stickers";
 
 const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
-// #endregion
 
-// #region Button Event Listeners and Logic
 const drawingButton = document.createElement("button");
 drawingButton.textContent = "Draw";
 drawingButton.className = "tool-button selectedTool";
@@ -278,7 +276,9 @@ for (const emoji of stickerEmojis) {
   });
   stickersContainer.append(b);
 }
+//#endregion
 
+// #region Button Event Listeners and Logic
 // clicking Draw deselects stickers and returns to drawing tool
 drawingButton.addEventListener("click", () => {
   selectedSticker = null;
