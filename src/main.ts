@@ -231,10 +231,53 @@ document.body.append(document.createElement("br"));
 // #endregion
 
 // #region Setup UI Elements
-// Tool buttons: thin / thick
-const toolsContainer = document.createElement("div");
-toolsContainer.className = "tools";
+// Set up tool dives
+const modeContainer = document.createElement("div");
+modeContainer.className = "modes";
 
+const drawingContainer = document.createElement("div");
+drawingContainer.className = "tools";
+
+const stickersContainer = document.createElement("div");
+stickersContainer.className = "tools stickers";
+stickersContainer.classList.add("collapsed");
+
+// Mode selection buttons
+const drawingButton = document.createElement("button");
+drawingButton.textContent = "Draw";
+drawingButton.className = "tool-button selectedTool";
+modeContainer.append(drawingButton);
+
+const stickerButton = document.createElement("button");
+stickerButton.textContent = "Stickers";
+stickerButton.className = "tool-button";
+modeContainer.append(stickerButton);
+
+drawingButton.addEventListener("click", () => {
+  selectedSticker = null;
+  for (const btn of Array.from(modeContainer.querySelectorAll("button"))) {
+    btn.classList.remove("selectedTool");
+  }
+  stickersContainer.classList.add("collapsed");
+  drawingContainer.classList.remove("collapsed");
+  drawingButton.classList.add("selectedTool");
+  notify("tool-moved");
+});
+
+stickerButton.addEventListener("click", () => {
+  selectedSticker = null;
+  for (const btn of Array.from(modeContainer.querySelectorAll("button"))) {
+    btn.classList.remove("selectedTool");
+  }
+  drawingContainer.classList.add("collapsed");
+  stickersContainer.classList.remove("collapsed");
+  stickerButton.classList.add("selectedTool");
+  notify("tool-moved");
+});
+
+document.body.append(modeContainer);
+
+// Tool buttons: thin / thick
 const thinButton = document.createElement("button");
 thinButton.textContent = "Thin";
 thinButton.className = "tool-button";
@@ -243,13 +286,10 @@ const thickButton = document.createElement("button");
 thickButton.textContent = "Thick";
 thickButton.className = "tool-button";
 
-toolsContainer.append(thinButton, thickButton);
-document.body.append(toolsContainer);
+drawingContainer.append(thinButton, thickButton);
+document.body.append(drawingContainer);
 
 // Sticker tool buttons
-const stickersContainer = document.createElement("div");
-stickersContainer.className = "tools stickers";
-
 const addSticker = document.createElement("button");
 addSticker.textContent = "+";
 addSticker.className = "tool-button";
@@ -266,11 +306,6 @@ addSticker.addEventListener("click", () => {
 stickersContainer.append(addSticker);
 
 const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
-
-const drawingButton = document.createElement("button");
-drawingButton.textContent = "Draw";
-drawingButton.className = "tool-button selectedTool";
-stickersContainer.append(drawingButton);
 
 function addStickerButton(emoji: string) {
   const b = document.createElement("button");
@@ -295,24 +330,12 @@ function addStickerButton(emoji: string) {
 for (const emoji of stickerEmojis) {
   addStickerButton(emoji);
 }
-//#endregion
-
-// #region Button Event Listeners and Logic
-// clicking Draw deselects stickers and returns to drawing tool
-drawingButton.addEventListener("click", () => {
-  selectedSticker = null;
-  for (const btn of Array.from(stickersContainer.querySelectorAll("button"))) {
-    btn.classList.remove("selectedTool");
-  }
-  drawingButton.classList.add("selectedTool");
-  notify("tool-moved");
-});
 
 document.body.append(stickersContainer);
 
 function selectTool(button: HTMLButtonElement, thickness: number) {
   // update visual state
-  for (const b of Array.from(toolsContainer.querySelectorAll("button"))) {
+  for (const b of Array.from(drawingContainer.querySelectorAll("button"))) {
     b.classList.remove("selectedTool");
   }
   button.classList.add("selectedTool");
@@ -328,7 +351,9 @@ thickButton.addEventListener(
   "click",
   () => selectTool(thickButton, thickWidth),
 );
+// #endregion
 
+// #region Button Event Listeners and Logic
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "Clear";
 clearButton.className = "tool-button";
