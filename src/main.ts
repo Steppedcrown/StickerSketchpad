@@ -1,5 +1,12 @@
 import "./style.css";
 
+function randomColor() {
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  return `rgb(${r},${g},${b})`;
+}
+
 // #region Create Document and Canvas Elements
 const header = document.createElement("h1");
 header.textContent = "Sticker Canvas";
@@ -24,10 +31,12 @@ interface Command {
 class LineCommand implements Command {
   points: Point[];
   width: number;
+  color: string;
 
-  constructor(x: number, y: number, width = 4) {
+  constructor(x: number, y: number, width = 4, color = "black") {
     this.points = [{ x, y }];
     this.width = width;
+    this.color = color;
   }
   drag(x: number, y: number) {
     this.points.push({ x, y });
@@ -35,7 +44,7 @@ class LineCommand implements Command {
 
   display(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = this.color;
     ctx.lineWidth = this.width;
     ctx.lineCap = "round";
 
@@ -61,17 +70,19 @@ class CursorCommand implements Command {
   x: number;
   y: number;
   width: number;
+  color: string;
 
-  constructor(x: number, y: number, width = 2) {
+  constructor(x: number, y: number, width = 2, color = "black") {
     this.x = x;
     this.y = y;
     this.width = width;
+    this.color = color;
   }
 
   display(ctx: CanvasRenderingContext2D): void {
     // draw a filled circle matching the current tool thickness
     ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.fillStyle = this.color;
     const radius = Math.max(1, this.width / 2);
     ctx.beginPath();
     ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
@@ -86,12 +97,20 @@ class StickerCommand implements Command {
   y: number;
   emoji: string;
   size: number;
+  rotation: number;
 
-  constructor(x: number, y: number, emoji: string, size = 32) {
+  constructor(
+    x: number,
+    y: number,
+    emoji: string,
+    size = 32,
+    rotation = 0,
+  ) {
     this.x = x;
     this.y = y;
     this.emoji = emoji;
     this.size = size;
+    this.rotation = rotation;
   }
 
   // reposition the sticker
@@ -102,10 +121,12 @@ class StickerCommand implements Command {
 
   display(ctx: CanvasRenderingContext2D): void {
     ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.font = `${this.size}px serif`;
-    ctx.fillText(this.emoji, this.x, this.y);
+    ctx.fillText(this.emoji, 0, 0);
     ctx.restore();
   }
 }
@@ -121,6 +142,9 @@ let previewCommand: CursorCommand | StickerCommand | null = null;
 // currently selected sticker emoji (null means drawing tool)
 let selectedSticker: string | null = null;
 const stickerSize: number = 48;
+
+let nextLineColor = "black";
+let nextStickerRotation = 0;
 
 const thinWidth = 3;
 const thickWidth = 9;
@@ -152,9 +176,15 @@ canvas.addEventListener("mouseenter", (e: MouseEvent) => {
       e.offsetY,
       selectedSticker,
       stickerSize,
+      nextStickerRotation,
     );
   } else {
-    previewCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+    previewCommand = new CursorCommand(
+      e.offsetX,
+      e.offsetY,
+      currentThickness,
+      nextLineColor,
+    );
   }
   notify("tool-moved");
 });
@@ -173,9 +203,15 @@ canvas.addEventListener("mousemove", (e: MouseEvent) => {
       e.offsetY,
       selectedSticker,
       stickerSize,
+      nextStickerRotation,
     );
   } else {
-    previewCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+    previewCommand = new CursorCommand(
+      e.offsetX,
+      e.offsetY,
+      currentThickness,
+      nextLineColor,
+    );
   }
   notify("tool-moved");
 
@@ -196,6 +232,7 @@ canvas.addEventListener("mousedown", (e: MouseEvent) => {
       e.offsetX,
       e.offsetY,
       currentThickness,
+      nextLineColor,
     );
     commands.push(currentLineCommand);
     previewCommand = null;
@@ -214,6 +251,7 @@ canvas.addEventListener("mouseup", (e: MouseEvent) => {
       e.offsetY,
       selectedSticker,
       stickerSize,
+      nextStickerRotation,
     );
     commands.push(sticker);
 
@@ -222,9 +260,15 @@ canvas.addEventListener("mouseup", (e: MouseEvent) => {
       e.offsetY,
       selectedSticker,
       stickerSize,
+      nextStickerRotation,
     );
   } else {
-    previewCommand = new CursorCommand(e.offsetX, e.offsetY, currentThickness);
+    previewCommand = new CursorCommand(
+      e.offsetX,
+      e.offsetY,
+      currentThickness,
+      nextLineColor,
+    );
   }
   notify("drawing-changed");
 });
@@ -232,7 +276,7 @@ canvas.addEventListener("mouseup", (e: MouseEvent) => {
 document.body.append(document.createElement("br"));
 // #endregion
 
-// #region Setup UI Elements
+// #region Setup Toolbar UI
 // Set up tool divs
 const modeContainer = document.createElement("div");
 modeContainer.className = "modes";
@@ -344,6 +388,7 @@ function addStickerButton(emoji: string) {
   b.addEventListener("click", () => {
     // select this sticker
     selectedSticker = emoji;
+    nextStickerRotation = Math.random() * Math.PI * 2;
     // update visual state
     for (
       const btn of Array.from(stickersContainer.querySelectorAll("button"))
@@ -380,6 +425,7 @@ function selectTool(button: HTMLButtonElement, thickness: number) {
   button.classList.add("selectedTool");
   currentThickness = thickness;
   selectedDrawingToolButton = button;
+  nextLineColor = randomColor();
 }
 
 // default selection
