@@ -250,6 +250,21 @@ document.body.append(toolsContainer);
 const stickersContainer = document.createElement("div");
 stickersContainer.className = "tools stickers";
 
+const addSticker = document.createElement("button");
+addSticker.textContent = "+";
+addSticker.className = "tool-button";
+addSticker.addEventListener("click", () => {
+  const newEmojis = prompt("Enter one or more emojis to add to the palette");
+  if (newEmojis) {
+    // Using Array.from() or the spread operator `...` correctly handles
+    // multi-codepoint emoji characters.
+    for (const emoji of [...newEmojis]) {
+      addStickerButton(emoji);
+    }
+  }
+});
+stickersContainer.append(addSticker);
+
 const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
 
 const drawingButton = document.createElement("button");
@@ -274,27 +289,12 @@ function addStickerButton(emoji: string) {
     // fire tool-moved so preview updates
     notify("tool-moved");
   });
-  stickersContainer.append(b);
+  stickersContainer.insertBefore(b, addSticker);
 }
 
 for (const emoji of stickerEmojis) {
   addStickerButton(emoji);
 }
-
-const addSticker = document.createElement("button");
-addSticker.textContent = "+";
-addSticker.className = "tool-button";
-addSticker.addEventListener("click", () => {
-  const newEmojis = prompt("Enter one or more emojis to add to the palette");
-  if (newEmojis) {
-    // Using Array.from() or the spread operator `...` correctly handles
-    // multi-codepoint emoji characters.
-    for (const emoji of [...newEmojis]) {
-      addStickerButton(emoji);
-    }
-  }
-});
-stickersContainer.append(addSticker);
 //#endregion
 
 // #region Button Event Listeners and Logic
