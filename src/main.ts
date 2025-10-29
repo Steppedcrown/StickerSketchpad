@@ -231,7 +231,7 @@ document.body.append(document.createElement("br"));
 // #endregion
 
 // #region Setup UI Elements
-// Set up tool dives
+// Set up tool divs
 const modeContainer = document.createElement("div");
 modeContainer.className = "modes";
 
@@ -305,8 +305,6 @@ addSticker.addEventListener("click", () => {
 });
 stickersContainer.append(addSticker);
 
-const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
-
 function addStickerButton(emoji: string) {
   const b = document.createElement("button");
   b.textContent = emoji;
@@ -325,10 +323,17 @@ function addStickerButton(emoji: string) {
     notify("tool-moved");
   });
   stickersContainer.insertBefore(b, addSticker);
+  return b;
 }
 
+const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
+let first = true;
 for (const emoji of stickerEmojis) {
-  addStickerButton(emoji);
+  const sticker = addStickerButton(emoji);
+  if (first) {
+    sticker.classList.add("selectedTool");
+    first = false;
+  }
 }
 
 document.body.append(stickersContainer);
