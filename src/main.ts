@@ -1,5 +1,6 @@
 import "./style.css";
 
+// #region Create Document and Canvas Elements
 const header = document.createElement("h1");
 header.textContent = "Sticker Canvas";
 document.body.appendChild(header);
@@ -11,7 +12,9 @@ canvas.height = 256;
 document.body.appendChild(canvas);
 
 const ctx = canvas.getContext("2d");
+// #endregion
 
+// #region Command Implementations
 type Point = { x: number; y: number };
 
 interface Command {
@@ -106,7 +109,9 @@ class StickerCommand implements Command {
     ctx.restore();
   }
 }
+// #endregion
 
+// #region Application State and Variables
 const commands: Command[] = [];
 const redoCommands: Command[] = [];
 let currentLineCommand: LineCommand | null = null;
@@ -120,7 +125,9 @@ const stickerSize: number = 32;
 const thinWidth = 2;
 const thickWidth = 8;
 let currentThickness = thinWidth; // default thickness for new lines
+// #endregion
 
+// #region Event Handling and Drawing Logic
 const bus = new EventTarget();
 function notify(name: string) {
   bus.dispatchEvent(new Event(name));
@@ -221,7 +228,9 @@ canvas.addEventListener("mouseup", (e: MouseEvent) => {
 });
 
 document.body.append(document.createElement("br"));
+// #endregion
 
+// #region Setup UI Elements
 // Tool buttons: thin / thick
 const toolsContainer = document.createElement("div");
 toolsContainer.className = "tools";
@@ -242,7 +251,9 @@ const stickersContainer = document.createElement("div");
 stickersContainer.className = "tools stickers";
 
 const stickerEmojis = ["🐱", "🌵", "🍕"]; // three favorite emojis
+// #endregion
 
+// #region Button Event Listeners and Logic
 const drawingButton = document.createElement("button");
 drawingButton.textContent = "Draw";
 drawingButton.className = "tool-button selectedTool";
@@ -334,3 +345,4 @@ redoButton.addEventListener("click", () => {
     notify("drawing-changed");
   }
 });
+// #endregion
