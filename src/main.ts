@@ -7,6 +7,10 @@ function randomColor() {
   return `rgb(${r},${g},${b})`;
 }
 
+function randomRotation() {
+  return Math.random() * Math.PI * 2;
+}
+
 // #region Create Document and Canvas Elements
 const header = document.createElement("h1");
 header.textContent = "Sticker Canvas";
@@ -255,6 +259,9 @@ canvas.addEventListener("mouseup", (e: MouseEvent) => {
     );
     commands.push(sticker);
 
+    // Randomize next sticker rotation
+    nextStickerRotation = randomRotation();
+
     previewCommand = new StickerCommand(
       e.offsetX,
       e.offsetY,
@@ -263,6 +270,9 @@ canvas.addEventListener("mouseup", (e: MouseEvent) => {
       nextStickerRotation,
     );
   } else {
+    // Randomize line color after drawing line
+    nextLineColor = randomColor();
+
     previewCommand = new CursorCommand(
       e.offsetX,
       e.offsetY,
@@ -388,7 +398,7 @@ function addStickerButton(emoji: string) {
   b.addEventListener("click", () => {
     // select this sticker
     selectedSticker = emoji;
-    nextStickerRotation = Math.random() * Math.PI * 2;
+    nextStickerRotation = randomRotation();
     // update visual state
     for (
       const btn of Array.from(stickersContainer.querySelectorAll("button"))
