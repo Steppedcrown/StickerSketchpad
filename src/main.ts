@@ -246,7 +246,7 @@ const toolContainers = [drawingContainer, stickersContainer];
 
 // Mode selection buttons
 const drawingButton = document.createElement("button");
-drawingButton.textContent = "Draw";
+drawingButton.textContent = "Markers";
 drawingButton.className = "tool-button selectedTool";
 modeContainer.append(drawingButton);
 
@@ -274,6 +274,7 @@ function selectMode(
 }
 
 drawingButton.addEventListener("click", () => {
+  selectedSticker = null;
   selectMode(drawingButton, drawingContainer);
 });
 
@@ -399,5 +400,38 @@ redoButton.addEventListener("click", () => {
     commands.push(restored);
     notify("drawing-changed");
   }
+});
+
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "Export";
+exportButton.className = "tool-button";
+document.body.append(exportButton);
+
+exportButton.addEventListener("click", () => {
+  // Create a new canvas for exporting
+  const exportCanvas = document.createElement("canvas");
+  const exportSize = 1024;
+  exportCanvas.width = exportSize;
+  exportCanvas.height = exportSize;
+  const exportCtx = exportCanvas.getContext("2d");
+
+  if (!exportCtx) {
+    return;
+  }
+
+  // Scale the context to draw the existing commands on the larger canvas
+  const scaleFactor = exportSize / canvas.width;
+  exportCtx.scale(scaleFactor, scaleFactor);
+
+  // Draw the commands from the display list (excluding the tool preview)
+  for (const cmd of commands) {
+    cmd.display(exportCtx);
+  }
+
+  // Trigger the file download
+  const link = document.createElement("a");
+  link.download = "sticker-sketchpad.png";
+  link.href = exportCanvas.toDataURL("image/png");
+  link.click();
 });
 // #endregion
