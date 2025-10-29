@@ -257,7 +257,7 @@ drawingButton.textContent = "Draw";
 drawingButton.className = "tool-button selectedTool";
 stickersContainer.append(drawingButton);
 
-for (const emoji of stickerEmojis) {
+function addStickerButton(emoji: string) {
   const b = document.createElement("button");
   b.textContent = emoji;
   b.className = "tool-button";
@@ -275,6 +275,10 @@ for (const emoji of stickerEmojis) {
     notify("tool-moved");
   });
   stickersContainer.append(b);
+}
+
+for (const emoji of stickerEmojis) {
+  addStickerButton(emoji);
 }
 //#endregion
 
