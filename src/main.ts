@@ -120,11 +120,13 @@ let previewCommand: CursorCommand | StickerCommand | null = null;
 
 // currently selected sticker emoji (null means drawing tool)
 let selectedSticker: string | null = null;
-const stickerSize: number = 32;
+const stickerSize: number = 48;
 
-const thinWidth = 2;
-const thickWidth = 8;
+const thinWidth = 3;
+const thickWidth = 9;
 let currentThickness = thinWidth; // default thickness for new lines
+let selectedDrawingToolButton: HTMLButtonElement;
+let selectedStickerButton: HTMLButtonElement | null = null;
 // #endregion
 
 // #region Event Handling and Drawing Logic
@@ -270,6 +272,29 @@ function selectMode(
   }
   containerToShow.classList.remove("collapsed");
 
+  // De-select all tools in both toolbars
+  for (const btn of Array.from(drawingContainer.querySelectorAll("button"))) {
+    btn.classList.remove("selectedTool");
+  }
+  for (const btn of Array.from(stickersContainer.querySelectorAll("button"))) {
+    if (btn.textContent !== "+") { // Don't de-select the '+' button
+      btn.classList.remove("selectedTool");
+    }
+  }
+
+  // Re-select the active tool for the current mode
+  if (containerToShow === drawingContainer) {
+    if (selectedDrawingToolButton) {
+      selectedDrawingToolButton.classList.add("selectedTool");
+    }
+    selectedSticker = null; // Clear sticker selection
+  } else { // containerToShow === stickersContainer
+    if (selectedStickerButton) {
+      selectedStickerButton.classList.add("selectedTool");
+      selectedSticker = selectedStickerButton.textContent; // Reselect the sticker
+    }
+  }
+
   notify("tool-moved");
 }
 
@@ -326,6 +351,7 @@ function addStickerButton(emoji: string) {
       btn.classList.remove("selectedTool");
     }
     b.classList.add("selectedTool");
+    selectedStickerButton = b;
     // fire tool-moved so preview updates
     notify("tool-moved");
   });
@@ -339,6 +365,7 @@ for (const emoji of stickerEmojis) {
   const sticker = addStickerButton(emoji);
   if (first) {
     sticker.classList.add("selectedTool");
+    selectedStickerButton = sticker;
     first = false;
   }
 }
@@ -351,8 +378,8 @@ function selectTool(button: HTMLButtonElement, thickness: number) {
     b.classList.remove("selectedTool");
   }
   button.classList.add("selectedTool");
-  // set thickness for next lines
   currentThickness = thickness;
+  selectedDrawingToolButton = button;
 }
 
 // default selection
@@ -403,7 +430,7 @@ redoButton.addEventListener("click", () => {
 });
 
 const exportButton = document.createElement("button");
-exportButton.innerHTML = "Export";
+exportButton.innerHTML = "Export as PNG";
 exportButton.className = "tool-button";
 document.body.append(exportButton);
 
