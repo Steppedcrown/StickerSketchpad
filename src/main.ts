@@ -253,26 +253,29 @@ stickerButton.textContent = "Stickers";
 stickerButton.className = "tool-button";
 modeContainer.append(stickerButton);
 
-drawingButton.addEventListener("click", () => {
-  selectedSticker = null;
+function selectMode(
+  selectedButton: HTMLButtonElement,
+  containerToShow: HTMLDivElement,
+  containerToHide: HTMLDivElement,
+) {
+  // Inside selectMode function
   for (const btn of Array.from(modeContainer.querySelectorAll("button"))) {
     btn.classList.remove("selectedTool");
   }
-  stickersContainer.classList.add("collapsed");
-  drawingContainer.classList.remove("collapsed");
-  drawingButton.classList.add("selectedTool");
+  selectedButton.classList.add("selectedTool");
+
+  containerToShow.classList.remove("collapsed");
+  containerToHide.classList.add("collapsed");
+
   notify("tool-moved");
+}
+
+drawingButton.addEventListener("click", () => {
+  selectMode(drawingButton, drawingContainer, stickersContainer);
 });
 
 stickerButton.addEventListener("click", () => {
-  selectedSticker = null;
-  for (const btn of Array.from(modeContainer.querySelectorAll("button"))) {
-    btn.classList.remove("selectedTool");
-  }
-  drawingContainer.classList.add("collapsed");
-  stickersContainer.classList.remove("collapsed");
-  stickerButton.classList.add("selectedTool");
-  notify("tool-moved");
+  selectMode(stickerButton, stickersContainer, drawingContainer);
 });
 
 document.body.append(modeContainer);
